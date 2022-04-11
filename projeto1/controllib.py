@@ -4,6 +4,7 @@ from collections import deque
 from math import *
 import numpy as np
 import time
+from gui import *
 
 
 
@@ -60,12 +61,10 @@ class Control:
 
 class RemoteControl:
 
-	def __init__(self, controller, verbose = True):
+	def __init__(self, controller,verbose = True):
 
 		self.controller = controller
 		self.verbose = verbose
-
-
 
 	async def serverLoop(self, websocket, path):
 
@@ -79,7 +78,7 @@ class RemoteControl:
 			try:
 
 				print('get references') if self.verbose else None
-				references = [];
+				references = []
 				await websocket.send('get references')
 				received = (await websocket.recv()).split(',')
 				print(received) if self.verbose else None
@@ -90,7 +89,7 @@ class RemoteControl:
 
 
 				print('get outputs') if self.verbose else None
-				outputs = [];
+				outputs = []
 				await websocket.send('get outputs')
 				received = (await websocket.recv()).split(',')
 				print(received) if self.verbose else None

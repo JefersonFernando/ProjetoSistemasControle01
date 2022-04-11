@@ -1,4 +1,5 @@
 from controllib import *
+from gui import *
 
 class firstControl(Control): 
 
@@ -29,5 +30,6 @@ class firstControl(Control):
 
 
 controller = firstControl(0.2,3)
+#gui = myGui()
 rc = RemoteControl(controller)
 rc.run()
