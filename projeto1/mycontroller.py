@@ -27,9 +27,9 @@ class firstControl(Control):
 
 		return u0
 
-
-
-controller = firstControl(0.2,3)
-#gui = myGui()
-rc = RemoteControl(controller)
-rc.run()
+if __name__ == '__main__':
+	loop = asyncio.get_event_loop()
+	controller = firstControl(0.2, 3)
+	rc = RemoteControl(controller, loop, verbose=True)
+	loop.run_forever()
+	loop.close()

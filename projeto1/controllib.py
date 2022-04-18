@@ -1,4 +1,5 @@
 import asyncio
+from typing_extensions import Self
 import websockets
 from collections import deque
 from math import *
@@ -17,7 +18,6 @@ class Control:
 		self._r = deque([0]*order)
 		self.currU = 0
 		self.time = 0.0
-
 
 
 	def reference(self, ref):
@@ -61,10 +61,20 @@ class Control:
 
 class RemoteControl:
 
-	def __init__(self, controller,verbose = True):
-
+	def __init__(self, controller, loop, interval=1/120, verbose = False):
 		self.controller = controller
 		self.verbose = verbose
+		self.loop = loop
+		self.tasks = []
+		self.gui = myGui(self)
+		self.tasks.append(loop.create_task(self.gui.updater(interval)))
+		self.tasks.append(loop.create_task(self.run()))
+
+	def finish(self):
+		for task in self.tasks:
+			task.cancel()
+		self.loop.stop()
+		self.destroy()
 
 	async def serverLoop(self, websocket, path):
 
@@ -95,9 +105,6 @@ class RemoteControl:
 				print(received) if self.verbose else None
 				out = float(received[1])
 
-
-
-
 				self.controller.reference(ref)
 
 				self.controller.measured(out)
@@ -105,10 +112,6 @@ class RemoteControl:
 				u = self.controller.control()
 
 				self.controller.apply(u)
-
-
-
-
 				
 				print(f'u = {u}') if self.verbose else None
 				await websocket.send('set input|'+f"{u}")
@@ -122,7 +125,7 @@ class RemoteControl:
 					ellapsedTime = endTime - startTime
 
 
-				print('%.4f %.4f %.4f %.4f %.4f, (%.4f)'%(self.controller.time, ref, out, u, self.controller.T, ellapsedTime))				
+				# print('%.4f %.4f %.4f %.4f %.4f, (%.4f)'%(self.controller.time, ref, out, u, self.controller.T, ellapsedTime))				
 
 
 			except:
