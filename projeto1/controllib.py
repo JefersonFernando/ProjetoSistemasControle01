@@ -18,6 +18,8 @@ class Control:
 		self._r = deque([0]*order)
 		self.currU = 0
 		self.time = 0.0
+		self.startTime = 0.0
+		self.currentAmp = float(0.0)
 
 
 	def reference(self, ref):
@@ -70,11 +72,28 @@ class RemoteControl:
 		self.tasks.append(loop.create_task(self.gui.updater(interval)))
 		self.tasks.append(loop.create_task(self.run()))
 
+		self.malha = 'Malha Aberta'
+		self.signal = 'Degrau'
+		self.amplitude = 1.0
+		self.period = 1.0
+		self.offset = 0.0
+		self.ampMin = 1.0
+		self.periodMin = 1.0
+
 	def finish(self):
 		for task in self.tasks:
 			task.cancel()
 		self.loop.stop()
 		self.destroy()
+
+	def refreshParams(self, malha, signal, amplitude, period, offset, ampMin, periodMin):	
+		self.malha = malha
+		self.signal = signal
+		self.amplitude = amplitude
+		self.period = period
+		self.offset = offset
+		self.ampMin = ampMin
+		self.periodMin = periodMin
 
 	async def serverLoop(self, websocket, path):
 
@@ -97,7 +116,6 @@ class RemoteControl:
 				if isnan(ref):
 					ref = 0.0
 
-
 				print('get outputs') if self.verbose else None
 				outputs = []
 				await websocket.send('get outputs')
@@ -105,11 +123,33 @@ class RemoteControl:
 				print(received) if self.verbose else None
 				out = float(received[1])
 
-				self.controller.reference(ref)
 
-				self.controller.measured(out)
+				if self.signal == 'Degrau':
+					ref = self.controller.stepWave(self.amplitude)
+				elif self.signal == 'Onda Senoidal':
+					ref = self.controller.sin(self.controller.time, self.offset, self.amplitude, self.period)
+				elif self.signal == 'Onda quadrada':
+					ref = self.controller.squareWave(self.controller.time, self.period, self.amplitude, self.offset)
+				elif self.signal == 'Onda dente de serra':
+					ref = self.controller.sawTooth(self.controller.time, self.period, self.amplitude, self.offset)
+				else:
+					ref = self.controller.aleatory(self.controller.time, self.amplitude, self.ampMin, self.period, self.periodMin)
 
-				u = self.controller.control()
+				
+
+
+				if self.malha == 'Malha Fechada':
+					self.controller.reference(ref)
+
+					self.controller.measured(out)
+
+					u = self.controller.control()	
+
+					self.gui.updateValues(self.controller.time, ref, u, float(received[1]), float(received[2]))
+					
+				else:
+					u = ref
+					self.gui.updateValues(self.controller.time, ref, ref, float(received[1]), float(received[2]))
 
 				self.controller.apply(u)
 				
