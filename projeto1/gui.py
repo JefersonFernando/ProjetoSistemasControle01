@@ -1,4 +1,5 @@
 
+from cProfile import label
 from tkinter import *
 import asyncio
 from tkinter.ttk import *
@@ -53,12 +54,31 @@ class myGui(Tk):
         self.ax.plot(self.timeData[:] ,self.out1Data[:], linestyle="solid", marker='.', linewidth=2, markersize=1, color='red')
         self.ax.plot(self.timeData[:] ,self.out2Data[:], linestyle="solid", marker='.', linewidth=2, markersize=1, color='green')
 
+        self.ax.title.set_text("Estados do sistema")
+        self.ax.set(xlabel='Tempo', ylabel='Posição')
+
         self.canvas.draw()
 
+    def validate(self, action, index, value_if_allowed,
+                       prior_value, text, validation_type, trigger_type, widget_name):
+        if value_if_allowed:
+            try:
+                float(value_if_allowed)
+                return True
+            except ValueError:
+                return False
+        else:
+            return False
+
     async def updater(self, interval):
+        self.resizable(width=False, height=False)
+
+        vcmd = (self.register(self.validate),
+                '%d', '%i', '%P', '%s', '%S', '%v', '%V', '%W')
+
         self.title('iDynamic Controller')
 
-        self.info = Label(self, text='Projeto 1 - projeto de Sistemas de Controle')
+        self.info = Label(self, text='PROJETO DE SISTEMAS DE CONTROLE - iDYNAMIC')
         self.info.grid(column=0, row=0,  padx=10, pady=0, columnspan=2)
 
         self.startButton = Button(self, text="Atualizar", command = self.startButtonCallback)
@@ -78,32 +98,35 @@ class myGui(Tk):
 
         self.infoAmpEntry = Label(self, text='Amplitude')
         self.infoAmpEntry.grid(column=0, row=4,  padx=10, pady=0, sticky=E)
-        self.ampEntry = Entry(self, textvariable=self.ampString)
+        self.ampEntry = Entry(self, textvariable=self.ampString, validate = 'key', validatecommand = vcmd)
         self.ampEntry.grid(column = 1, row = 4, sticky=W)
 
         self.infoPeriodEntry = Label(self, text='Período')
         self.infoPeriodEntry.grid(column=0, row=5,  padx=10, pady=0, sticky=E)
-        self.PeriodEntry = Entry(self, textvariable=self.periodString)
+        self.PeriodEntry = Entry(self, textvariable=self.periodString, validate = 'key', validatecommand = vcmd)
         self.PeriodEntry.grid(column = 1, row = 5, sticky=W)
 
         self.infoOffsetEntry = Label(self, text='Offset')
         self.infoOffsetEntry.grid(column=0, row=6,  padx=10, pady=0, sticky=E)
-        self.OffsetEntry = Entry(self, textvariable=self.offsetString)
+        self.OffsetEntry = Entry(self, textvariable=self.offsetString, validate = 'key', validatecommand = vcmd)
         self.OffsetEntry.grid(column = 1, row = 6, sticky=W)
 
         self.infoAmpMinEntry = Label(self, text='Amplitude mínima')
         self.infoAmpMinEntry.grid(column=0, row=7,  padx=10, pady=0, sticky=E)
-        self.AmpMinEntry = Entry(self, textvariable=self.ampMinString)
+        self.AmpMinEntry = Entry(self, textvariable=self.ampMinString, validate = 'key', validatecommand = vcmd)
         self.AmpMinEntry.grid(column = 1, row = 7, sticky=W)
 
         self.infoPeriodMinEntry = Label(self, text='Período mínimo')
         self.infoPeriodMinEntry.grid(column=0, row=8,  padx=10, pady=0, sticky=E)
-        self.PeriodMinEntry = Entry(self, textvariable=self.periodMinString)
-        self.PeriodMinEntry.grid(column = 1, row = 8, padx=10, pady=0, sticky=W)
+        self.PeriodMinEntry = Entry(self, textvariable=self.periodMinString, validate = 'key', validatecommand = vcmd)
+        self.PeriodMinEntry.grid(column = 1, row = 8, sticky=W)
 
         self.figure1 = plt.figure(figsize=(15,15), dpi = 50)
 
         self.ax = self.figure1.add_subplot(1,1,1)
+
+        self.ax.title.set_text("Estados do sistema")
+        self.ax.set(xlabel='Tempo', ylabel='Posição')
 
         self.canvas=FigureCanvasTkAgg(self.figure1 ,master=self)
         self.graph = self.canvas.get_tk_widget()

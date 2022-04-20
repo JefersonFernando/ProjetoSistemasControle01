@@ -164,10 +164,6 @@ class RemoteControl:
 					endTime = time.time()
 					ellapsedTime = endTime - startTime
 
-
-				# print('%.4f %.4f %.4f %.4f %.4f, (%.4f)'%(self.controller.time, ref, out, u, self.controller.T, ellapsedTime))				
-
-
 			except:
 				print('System not active...') if self.verbose else None
 

@@ -56,6 +56,6 @@ class firstControl(Control):
 if __name__ == '__main__':
 	loop = asyncio.get_event_loop()
 	controller = firstControl(0.1, 3)
-	rc = RemoteControl(controller, loop, verbose=True)
+	rc = RemoteControl(controller, loop, verbose=False)
 	loop.run_forever()
 	loop.close()
