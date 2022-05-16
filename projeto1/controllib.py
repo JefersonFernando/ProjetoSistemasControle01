@@ -20,13 +20,14 @@ class Control:
 		self.time = 0.0
 		self.startTime = 0.0
 		self.currentAmp = float(0.0)
-
+		self.P = 0
+		self.I = 0
+		self.D = 0
+		self.controller = "Erro"
 
 	def reference(self, ref):
 		self._r.rotate(-1)
 		self._r[-1] = ref
-
-
 
 	def measured(self, y):
 
@@ -38,17 +39,14 @@ class Control:
 		self._y.rotate(-1)
 		self._y[-1] = y
 
-
 	def control(self):
 
 		return 0
-
 
 	def apply(self, controlSignal):
 
 		self._u.rotate(-1)
 		self._u[-1] = controlSignal
-
 
 	def u(self, index = 0):
 		return self._u[index]
@@ -58,8 +56,6 @@ class Control:
 		return self._r[index-1]
 	def y(self, index = 0):
 		return self._y[index-1]
-
-
 
 class RemoteControl:
 
@@ -136,8 +132,7 @@ class RemoteControl:
 					ref = self.controller.aleatory(self.controller.time, self.amplitude, self.ampMin, self.period, self.periodMin)
 
 				
-
-
+				
 				if self.malha == 'Malha Fechada':
 					self.controller.reference(ref)
 
@@ -160,7 +155,7 @@ class RemoteControl:
 				ellapsedTime = 0.0
 
 				while ellapsedTime < self.controller.T:
-					time.sleep(0.0001)
+					time.sleep(0.1)
 					endTime = time.time()
 					ellapsedTime = endTime - startTime
 

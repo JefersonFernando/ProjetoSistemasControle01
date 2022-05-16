@@ -7,6 +7,10 @@ import random
 class firstControl(Control): 
 
 	def sin(self, time, offset, amplitude, period):
+		print(time)
+		print(offset)
+		print(amplitude)
+		print(period)
 		return ((amplitude * np.sin(2* np.pi * (1/period) * time )) + offset)
 
 	def sawTooth(self, time, period, amplitude, offset):
