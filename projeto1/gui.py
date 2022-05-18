@@ -34,11 +34,18 @@ class myGui(Tk):
         self.out2Data = list() 
         self.Malha = 'Malha Aberta'
         self.Signal = 'Degrau'
+        self.controller = 'Erro'
+        self.P = StringVar()
+        self.P.set("1.0")
+        self.I = StringVar()
+        self.I.set("1.0")
+        self.D = StringVar()
+        self.D.set("1.0")
         self.vcmd = (self.register(self.validate),
                 '%d', '%i', '%P', '%s', '%S', '%v', '%V', '%W')
 
     def refreshParams(self):
-        self.RemoteControl.refreshParams(self.Malha, self.Signal, float(self.ampString.get()), float(self.periodString.get()), float(self.offsetString.get()), float(self.ampMinString.get()), float(self.periodMinString.get()))
+        self.RemoteControl.refreshParams(self.Malha, self.Signal, float(self.ampString.get()), float(self.periodString.get()), float(self.offsetString.get()), float(self.ampMinString.get()), float(self.periodMinString.get()), self.controller, float(self.P.get()), float(self.I.get()), float(self.D.get()))
 
     def updateValues(self, timeData, refData, errorData, out1Data, out2Data):
         self.ax.clear()
@@ -69,6 +76,7 @@ class myGui(Tk):
         self.ax.plot(self.timeData[:] ,self.out2Data[:], linestyle="solid", marker='.', linewidth=2, markersize=1, color='green')
 
         self.ax.title.set_text("Estados do sistema")
+        self.ax.grid()
         self.ax.set(xlabel='Tempo', ylabel='Posição')
 
         self.canvas.draw()
@@ -86,7 +94,9 @@ class myGui(Tk):
 
     def malhaChanged(self, event):
         self.Malha = self.comboMalha.get()
-        print(self.Malha)
+    
+    def controllerChanged(self, event):
+        self.controller = self.comboController.get()
 
     def configGraphSize(self):
         win = Toplevel(self)
@@ -105,11 +115,13 @@ class myGui(Tk):
 
         self.Signal = 'Degrau'
 
-        self.Malha = 'Malha Aberta'
         infoMalha = Label(win, text='Malha')
         infoMalha.grid(column=0, row=0,  padx=50, pady=(50,10))
         self.comboMalha = Combobox(win, state='readonly', text='Malha',values=['Malha Aberta', 'Malha Fechada'])
-        self.comboMalha.current(0)
+        if(self.Malha == 'Malha Aberta'):
+            self.comboMalha.current(0)
+        else:
+            self.comboMalha.current(1)
         self.comboMalha.bind('<<ComboboxSelected>>', self.malhaChanged)
         self.comboMalha.grid(column=0, row=1, padx=50)
 
@@ -128,11 +140,13 @@ class myGui(Tk):
 
         self.Signal = 'Onda Senoidal'
 
-        self.Malha = 'Malha Aberta'
         infoMalha = Label(win, text='Malha')
         infoMalha.grid(column=0, row=0,  padx=50, pady=(50,10))
         self.comboMalha = Combobox(win, state='readonly', text='Malha',values=['Malha Aberta', 'Malha Fechada'])
-        self.comboMalha.current(0)
+        if(self.Malha == 'Malha Aberta'):
+            self.comboMalha.current(0)
+        else:
+            self.comboMalha.current(1)
         self.comboMalha.bind('<<ComboboxSelected>>', self.malhaChanged)
         self.comboMalha.grid(column=0, row=1, padx=50)
 
@@ -161,11 +175,13 @@ class myGui(Tk):
 
         self.Signal = 'Onda quadrada'
 
-        self.Malha = 'Malha Aberta'
         infoMalha = Label(win, text='Malha')
         infoMalha.grid(column=0, row=0,  padx=50, pady=(50,10))
         self.comboMalha = Combobox(win, state='readonly', text='Malha',values=['Malha Aberta', 'Malha Fechada'])
-        self.comboMalha.current(0)
+        if(self.Malha == 'Malha Aberta'):
+            self.comboMalha.current(0)
+        else:
+            self.comboMalha.current(1)
         self.comboMalha.bind('<<ComboboxSelected>>', self.malhaChanged)
         self.comboMalha.grid(column=0, row=1, padx=50)
 
@@ -194,11 +210,13 @@ class myGui(Tk):
 
         self.Signal = 'Onda dente de serra'
 
-        self.Malha = 'Malha Aberta'
         infoMalha = Label(win, text='Malha')
         infoMalha.grid(column=0, row=0,  padx=50, pady=(50,10))
         self.comboMalha = Combobox(win, state='readonly', text='Malha',values=['Malha Aberta', 'Malha Fechada'])
-        self.comboMalha.current(0)
+        if(self.Malha == 'Malha Aberta'):
+            self.comboMalha.current(0)
+        else:
+            self.comboMalha.current(1)
         self.comboMalha.bind('<<ComboboxSelected>>', self.malhaChanged)
         self.comboMalha.grid(column=0, row=1, padx=50)
 
@@ -227,11 +245,13 @@ class myGui(Tk):
 
         self.Signal = 'Sinal aleatório'
 
-        self.Malha = 'Malha Aberta'
         infoMalha = Label(win, text='Malha')
         infoMalha.grid(column=0, row=0,  padx=50, pady=(50,10))
         self.comboMalha = Combobox(win, state='readonly', text='Malha',values=['Malha Aberta', 'Malha Fechada'])
-        self.comboMalha.current(0)
+        if(self.Malha == 'Malha Aberta'):
+            self.comboMalha.current(0)
+        else:
+            self.comboMalha.current(1)
         self.comboMalha.bind('<<ComboboxSelected>>', self.malhaChanged)
         self.comboMalha.grid(column=0, row=1, padx=50)
 
@@ -258,6 +278,48 @@ class myGui(Tk):
         refreshButton = Button(win, text="Atualizar", command=self.refreshParams)
         refreshButton.grid(column=0, row=10, padx=10, pady=(50,50))
 
+    def configController(self):
+        win = Toplevel(self)
+        win.resizable(width=False, height=False)
+        win.title("Config Controller")
+
+        infoController = Label(win, text='Controlador')
+        infoController.grid(column=0, row=0,  padx=50, pady=(50,10))
+        self.comboController = Combobox(win, state='readonly', text='Controlador',values=['Erro', 'P', 'PD', 'PI', 'PID', 'PI-D', 'I-PD'])
+        if(self.controller == 'Erro'):
+            self.comboController.current(0)
+        elif(self.controller == 'P'):
+            self.comboController.current(1)
+        elif(self.controller == 'PD'):
+            self.comboController.current(2)
+        elif(self.controller == 'PI'):
+            self.comboController.current(3)
+        elif(self.controller == 'PID'):
+            self.comboController.current(4)
+        elif(self.controller == 'PI-D'):
+            self.comboController.current(5)  
+        else:
+            self.comboController.current(6)  
+        self.comboController.bind('<<ComboboxSelected>>', self.controllerChanged)
+        self.comboController.grid(column=0, row=1, padx=50)
+
+        infoPEntry = Label(win, text='P')
+        infoPEntry.grid(column=0, row=2,  padx=50, pady=(50,10))
+        PEntry = Entry(win, textvariable=self.P, validate = 'key', validatecommand = self.vcmd)
+        PEntry.grid(column = 0, row = 3, padx=50)
+
+        infoIEntry = Label(win, text='I')
+        infoIEntry.grid(column=0, row=4,  padx=50, pady=(50,10))
+        IEntry = Entry(win, textvariable=self.I, validate = 'key', validatecommand = self.vcmd)
+        IEntry.grid(column = 0, row = 5, padx=50)
+
+        infoDEntry = Label(win, text='D')
+        infoDEntry.grid(column=0, row=6,  padx=50, pady=(50,10))
+        DEntry = Entry(win, textvariable=self.D, validate = 'key', validatecommand = self.vcmd)
+        DEntry.grid(column = 0, row = 7, padx=50)
+
+        refreshButton = Button(win, text="Atualizar", command=self.refreshParams)
+        refreshButton.grid(column=0, row=8, padx=10, pady=(50,50))
 
     async def updater(self, interval):
         self.resizable(width=False, height=False)
@@ -265,7 +327,7 @@ class myGui(Tk):
         self.title('iDynamic Controller')
 
         self.info = Label(self, text='PROJETO DE SISTEMAS DE CONTROLE - iDYNAMIC')
-        self.info.grid(column=0, row=0,  padx=10, pady=0)
+        self.info.grid(column=0, row=0,  padx=0, pady=0)
 
         self.menubar = Menu(self)
 
@@ -282,28 +344,28 @@ class myGui(Tk):
         self.Signal.add_command(label='Sinal aleatório', command=self.aleatoryConfig)
         self.menubar.add_cascade(label="Sinal", menu=self.Signal)
 
-        self.Controlador = Menu(self.menubar)
-        self.Controlador.add_command(label='Erro')
-        self.Controlador.add_command(label='P')
-        self.Controlador.add_command(label='PD')
-        self.Controlador.add_command(label='PI')
-        self.Controlador.add_command(label='PID')
-        self.Controlador.add_command(label='PI-D')
-        self.Controlador.add_command(label='I-PD')
-        self.menubar.add_cascade(label="Controlador", menu=self.Controlador)
+        self.controllerMenu = Menu(self.menubar)
+        self.controllerMenu.add_command(label='Configurar', command=self.configController)
+        self.menubar.add_cascade(label="Controlador", menu=self.controllerMenu)
 
         self.config(menu=self.menubar)
 
+        self.configure(background='#c5c6c9')
+
         self.figure1 = plt.figure(figsize=(25,15), dpi = 50)
+
+        self.figure1.patch.set_facecolor('#c5c6c9')
 
         self.ax = self.figure1.add_subplot(1,1,1)
 
         self.ax.title.set_text("Estados do sistema")
         self.ax.set(xlabel='Tempo', ylabel='Posição')
+        self.ax.grid()
+        self.ax.set_facecolor('#404142')
 
         self.canvas=FigureCanvasTkAgg(self.figure1 ,master=self)
         self.graph = self.canvas.get_tk_widget()
-        self.graph.grid(row=1,column=0)
+        self.graph.grid(row=1,column=0, padx=10)
 
         while await asyncio.sleep(interval, True):
             self.update()

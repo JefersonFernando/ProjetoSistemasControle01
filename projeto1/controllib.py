@@ -20,9 +20,10 @@ class Control:
 		self.time = 0.0
 		self.startTime = 0.0
 		self.currentAmp = float(0.0)
-		self.P = 0
+		self.KP = 0
+		self.KI = 0
 		self.I = 0
-		self.D = 0
+		self.KD = 0
 		self.controller = "Erro"
 
 	def reference(self, ref):
@@ -82,7 +83,7 @@ class RemoteControl:
 		self.loop.stop()
 		self.destroy()
 
-	def refreshParams(self, malha, signal, amplitude, period, offset, ampMin, periodMin):	
+	def refreshParams(self, malha, signal, amplitude, period, offset, ampMin, periodMin, controller, P, I, D):	
 		self.malha = malha
 		self.signal = signal
 		self.amplitude = amplitude
@@ -90,15 +91,18 @@ class RemoteControl:
 		self.offset = offset
 		self.ampMin = ampMin
 		self.periodMin = periodMin
+		self.controller.controller = controller
+		self.controller.KP = P
+		self.controller.KI = I
+		self.controller.KD = D
 
 	async def serverLoop(self, websocket, path):
 
 		while True:
-			startTime = time.time()
 
 			await asyncio.sleep(self.controller.T)
 
-			self.controller.time += self.controller.T
+			self.startLoopTime = self.controller.time
 
 			try:
 
@@ -108,6 +112,8 @@ class RemoteControl:
 				received = (await websocket.recv()).split(',')
 				print(received) if self.verbose else None
 				ref = float(received[1])
+
+				print("Ref:{0}".format(ref))
 
 				if isnan(ref):
 					ref = 0.0
@@ -119,6 +125,7 @@ class RemoteControl:
 				print(received) if self.verbose else None
 				out = float(received[1])
 
+				self.controller.time = time.time()
 
 				if self.signal == 'Degrau':
 					ref = self.controller.stepWave(self.amplitude)
@@ -131,12 +138,10 @@ class RemoteControl:
 				else:
 					ref = self.controller.aleatory(self.controller.time, self.amplitude, self.ampMin, self.period, self.periodMin)
 
-				
-				
-				if self.malha == 'Malha Fechada':
-					self.controller.reference(ref)
+				self.controller.reference(ref)
+				self.controller.measured(out)
 
-					self.controller.measured(out)
+				if self.malha == 'Malha Fechada':
 
 					u = self.controller.control()	
 
@@ -151,13 +156,12 @@ class RemoteControl:
 				print(f'u = {u}') if self.verbose else None
 				await websocket.send('set input|'+f"{u}")
 
-
 				ellapsedTime = 0.0
 
 				while ellapsedTime < self.controller.T:
-					time.sleep(0.1)
+					time.sleep(0.01)
 					endTime = time.time()
-					ellapsedTime = endTime - startTime
+					ellapsedTime = endTime - self.startLoopTime
 
 			except:
 				print('System not active...') if self.verbose else None

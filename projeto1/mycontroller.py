@@ -7,10 +7,6 @@ import random
 class firstControl(Control): 
 
 	def sin(self, time, offset, amplitude, period):
-		print(time)
-		print(offset)
-		print(amplitude)
-		print(period)
 		return ((amplitude * np.sin(2* np.pi * (1/period) * time )) + offset)
 
 	def sawTooth(self, time, period, amplitude, offset):
@@ -33,33 +29,70 @@ class firstControl(Control):
 
 		return self.currentAmp
 
-	def control(self):
-		""" 
-		Return the control signal.
-		You can access the error at instant 0, -1, and -2 as:
-		self.e(0), self.e(-1) and self.e(-2) respectively 
-		Obs.: To access more errors, create your controller with the 
-		command:
-		controller = MyControllerName(T, n)		
-		where T is the sampling time (normally 0.3) and n is the order 
-		of the controller (how many errors you can access)
-		For instance:
-		controller = MyControllerName(0.5, 6)
-		Will use a controller with 0.5s sampling time and will access
-		from self.e(0) up to self.e(-5)
-		"""
-
-		# in this simple controller, it applies a control signal that 
-		# is 90% the current error
-
-
+	def errorControl(self):
 		u0 = 0.9*self.e(0)
 
 		return u0
 
+	def PIDController(self):
+		P = self.KP*self.e(0)
+		self.I += self.KI*self.e(0)*self.T
+		D = self.KD*(self.e(0) - self.e(-1))/self.T
+
+		return P+self.I+D
+
+	def PController(self):
+		P = self.KP*self.e(0)
+
+		return P
+
+	def PIController(self):
+		P = self.KP*self.e(0)
+		self.I += self.KI*self.e(0)*self.T
+		print("E:{0}".format(self.e(0)))
+		print("T:{0}".format(self.T))
+		print("I:{0}".format(self.I))
+
+		return P+self.I
+
+	def PDController(self):
+		P = self.KP*self.e(0)
+		D = self.KD*(self.e(0) - self.e(-1))/self.T
+
+		print("E0:{0}".format(self.e(0)))
+		print("E-1:{0}".format(self.e(-1)))
+		print("T:{0}".format(self.T))
+		print("KD:{0}".format(self.KD))
+		print("I:{0}".format(D))
+		print("P:{0}".format(P))
+		return P+D
+
+	def I_PDController(self):
+		P = self.KP*self.e(0)
+		self.I += self.KI*self.e(0)*self.T
+		D = self.KD * (self.y(0) - self.y(-1))
+		return P + self.I + D
+
+	def control(self):
+
+		if (self.controller == 'Erro'):
+			return self.errorControl()
+		if (self.controller == 'P'):
+			return self.PController()
+		if (self.controller == 'PD'):
+			return self.PDController()
+		if (self.controller == 'PI'):
+			return self.PIController()
+		if (self.controller == 'PID'):
+			return self.PIDController()
+		if (self.controller == 'PI-D'):
+			return self.PIDController()
+		if (self.controller == 'I-PD'):
+			return self.I_PDController()
+
 if __name__ == '__main__':
 	loop = asyncio.get_event_loop()
-	controller = firstControl(0.1, 3)
+	controller = firstControl(0.01, 3)
 	rc = RemoteControl(controller, loop, verbose=False)
 	loop.run_forever()
 	loop.close()
