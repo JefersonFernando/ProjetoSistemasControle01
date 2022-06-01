@@ -34,13 +34,6 @@ class firstControl(Control):
 
 		return u0
 
-	def PIDController(self):
-		P = self.KP*self.e(0)
-		self.I += self.KI*self.e(0)*self.T
-		D = self.KD*(self.e(0) - self.e(-1))/self.T
-
-		return P+self.I+D
-
 	def PController(self):
 		P = self.KP*self.e(0)
 
@@ -48,32 +41,56 @@ class firstControl(Control):
 
 	def PIController(self):
 		P = self.KP*self.e(0)
-		self.I += self.KI*self.e(0)*self.T
-		print("E:{0}".format(self.e(0)))
-		print("T:{0}".format(self.T))
-		print("I:{0}".format(self.I))
+		self.I += self.TI*(self.e(0)*self.T)
 
 		return P+self.I
 
 	def PDController(self):
 		P = self.KP*self.e(0)
-		D = self.KD*(self.e(0) - self.e(-1))/self.T
-
-		print("E0:{0}".format(self.e(0)))
-		print("E-1:{0}".format(self.e(-1)))
-		print("T:{0}".format(self.T))
-		print("KD:{0}".format(self.KD))
-		print("I:{0}".format(D))
-		print("P:{0}".format(P))
+		D = self.TD*(self.e(0) - self.e(-1))
 		return P+D
 
-	def I_PDController(self):
+	def PIDController(self):
 		P = self.KP*self.e(0)
-		self.I += self.KI*self.e(0)*self.T
-		D = self.KD * (self.y(0) - self.y(-1))
+		self.I += self.TI*(self.e(0)*self.T)
+		D = self.TD*(self.e(0) - self.e(-1))
+
+		return P+self.I+D
+
+	def I_PDController(self):
+		P = self.KP*self.y(0)
+		self.I += self.TI*self.e(0)*self.T
+		D = self.TD * (self.y(0) - self.y(-1))
 		return P + self.I + D
 
+	def calculateIAE(self):
+		self.IAE += np.abs(self.e(0))
+		return
+
+	def calculateISE(self):
+		self.ISE += np.abs(self.e(0))**2
+		return
+
+	def calculateITAE(self):
+		self.ITAE += self.T*np.abs(self.e(0))
+		return
+
+	def calculategoodhart(self):
+		currentU = self.u(0)
+		currentE = self.e(0)
+
+		self.goodhart += (0.4*currentU)/self.performanceTime
+		self.goodhart += (0.4*((currentU - currentE)**2))/self.performanceTime
+		self.goodhart += (0.2*(currentE**2))/self.performanceTime
+		return
+
 	def control(self):
+
+		if(self.performanceStartTime != 0 and self.performanceTime != 0):
+			self.calculateIAE()
+			self.calculateISE()
+			self.calculateITAE()
+			self.calculategoodhart()
 
 		if (self.controller == 'Erro'):
 			return self.errorControl()

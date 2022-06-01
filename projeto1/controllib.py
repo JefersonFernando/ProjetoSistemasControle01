@@ -21,10 +21,16 @@ class Control:
 		self.startTime = 0.0
 		self.currentAmp = float(0.0)
 		self.KP = 0
-		self.KI = 0
+		self.TI = 0
 		self.I = 0
-		self.KD = 0
+		self.TD = 0
 		self.controller = "Erro"
+		self.IAE = 0
+		self.ISE = 0
+		self.ITAE = 0
+		self.goodhart = 0
+		self.performanceStartTime = 0
+		self.performanceTime = 0
 
 	def reference(self, ref):
 		self._r.rotate(-1)
@@ -61,6 +67,7 @@ class Control:
 class RemoteControl:
 
 	def __init__(self, controller, loop, interval=1/120, verbose = False):
+		self.startTime = time.time()
 		self.controller = controller
 		self.verbose = verbose
 		self.loop = loop
@@ -77,15 +84,18 @@ class RemoteControl:
 		self.ampMin = 1.0
 		self.periodMin = 1.0
 
+		self.out = 'Saída 1'
+
 	def finish(self):
 		for task in self.tasks:
 			task.cancel()
 		self.loop.stop()
 		self.destroy()
 
-	def refreshParams(self, malha, signal, amplitude, period, offset, ampMin, periodMin, controller, P, I, D):	
+	def refreshParams(self, malha, signal, saida, amplitude, period, offset, ampMin, periodMin, controller, P, I, D, performanceTime):	
 		self.malha = malha
 		self.signal = signal
+		self.out = saida
 		self.amplitude = amplitude
 		self.period = period
 		self.offset = offset
@@ -93,16 +103,21 @@ class RemoteControl:
 		self.periodMin = periodMin
 		self.controller.controller = controller
 		self.controller.KP = P
-		self.controller.KI = I
-		self.controller.KD = D
+		self.controller.TI = I
+		self.controller.TD = D
+		self.controller.performanceStartTime = time.time() - self.startTime
+		self.controller.performanceTime = performanceTime
+		self.controller.IAE = 0.0
+		self.controller.ISE = 0.0
+		self.controller.ITAE = 0.0
+		self.controller.goodhart = 0.0
 
 	async def serverLoop(self, websocket, path):
-
 		while True:
 
 			await asyncio.sleep(self.controller.T)
 
-			self.startLoopTime = self.controller.time
+			self.currentTime = time.time() - self.startTime
 
 			try:
 
@@ -113,8 +128,6 @@ class RemoteControl:
 				print(received) if self.verbose else None
 				ref = float(received[1])
 
-				print("Ref:{0}".format(ref))
-
 				if isnan(ref):
 					ref = 0.0
 
@@ -123,45 +136,54 @@ class RemoteControl:
 				await websocket.send('get outputs')
 				received = (await websocket.recv()).split(',')
 				print(received) if self.verbose else None
-				out = float(received[1])
 
-				self.controller.time = time.time()
+				if((self.out == 'Saída 2') and (len(received) > 2)):
+					out = float(received[2])
+				else:
+					out = float(received[1])
 
 				if self.signal == 'Degrau':
 					ref = self.controller.stepWave(self.amplitude)
 				elif self.signal == 'Onda Senoidal':
-					ref = self.controller.sin(self.controller.time, self.offset, self.amplitude, self.period)
+					ref = self.controller.sin(self.currentTime, self.offset, self.amplitude, self.period)
 				elif self.signal == 'Onda quadrada':
-					ref = self.controller.squareWave(self.controller.time, self.period, self.amplitude, self.offset)
+					ref = self.controller.squareWave(self.currentTime, self.period, self.amplitude, self.offset)
 				elif self.signal == 'Onda dente de serra':
-					ref = self.controller.sawTooth(self.controller.time, self.period, self.amplitude, self.offset)
+					ref = self.controller.sawTooth(self.currentTime, self.period, self.amplitude, self.offset)
 				else:
-					ref = self.controller.aleatory(self.controller.time, self.amplitude, self.ampMin, self.period, self.periodMin)
+					ref = self.controller.aleatory(self.currentTime, self.amplitude, self.ampMin, self.period, self.periodMin)
 
 				self.controller.reference(ref)
 				self.controller.measured(out)
 
+				if(len(received) > 2):
+					out2 = float(received[2])
+				else:
+					out2 = 0.0
+
 				if self.malha == 'Malha Fechada':
-
-					u = self.controller.control()	
-
-					self.gui.updateValues(self.controller.time, ref, u, float(received[1]), float(received[2]))
-					
+					u = self.controller.control()
+					self.gui.updateValues(self.currentTime, ref, u, float(received[1]), out2)
 				else:
 					u = ref
-					self.gui.updateValues(self.controller.time, ref, ref, float(received[1]), float(received[2]))
+					self.gui.updateValues(self.currentTime, ref, ref, float(received[1]), out2)
 
 				self.controller.apply(u)
+
+				if((self.controller.performanceTime != 0) and (self.currentTime - self.controller.performanceStartTime > self.controller.performanceTime)):
+					self.performanceStartTime = 0
+					self.controller.performanceTime = 0
+					self.gui.showPerformancePopUp(self.controller.IAE,self.controller.ISE,self.controller.ITAE, self.controller.goodhart)
 				
 				print(f'u = {u}') if self.verbose else None
 				await websocket.send('set input|'+f"{u}")
 
-				ellapsedTime = 0.0
+				# ellapsedTime = 0.0
 
-				while ellapsedTime < self.controller.T:
-					time.sleep(0.01)
-					endTime = time.time()
-					ellapsedTime = endTime - self.startLoopTime
+				# while ellapsedTime < self.controller.T:
+				time.sleep(self.controller.T)
+					# endTime = time.time()
+					# ellapsedTime = endTime - self.startLoopTime
 
 			except:
 				print('System not active...') if self.verbose else None
